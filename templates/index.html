@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Insurance Cost Prediction</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #2ecc71;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .prediction-form {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .result-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            text-align: center;
+            display: none;
+        }
+        
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-top: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .prediction-form, .result-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Medical Insurance Cost Prediction</h1>
+            <p>Enter your details to get an estimate of your medical insurance charges</p>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+    
+    <div class="container">
+        <form id="predictionForm" class="prediction-form">
+            <div class="form-group">
+                <label for="age">Age</label>
+                <input type="number" id="age" name="age" min="18" max="100" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="bmi">BMI</label>
+                <input type="number" id="bmi" name="bmi" step="0.01" min="10" max="50" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="children">Number of Children</label>
+                <input type="number" id="children" name="children" min="0" max="10" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="smoker">Smoker</label>
+                <select id="smoker" name="smoker" required>
+                    <option value="">Are you a smoker?</option>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="region">Region</label>
+                <select id="region" name="region" required>
+                    <option value="">Select your region</option>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            
+            <button type="submit">Predict Insurance Cost</button>
+        </form>
+        
+        <div id="resultContainer" class="result-container">
+            <h2>Your Predicted Medical Insurance Charges:</h2>
+            <div id="resultValue" class="result-value"></div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 Medical Insurance Prediction System. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Fetch dropdown options when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchDropdownOptions();
+            
+            // Check if user is logged in
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+            }
+        });
+        
+        // Fetch dropdown options from backend
+        async function fetchDropdownOptions() {
+            try {
+                const token = localStorage.getItem('token');
+                
+                // Fetch gender options
+                const genderResponse = await fetch('/gender_options', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const genderOptions = await genderResponse.json();
+                populateDropdown('gender', genderOptions);
+                
+                // Fetch smoker options
+                const smokerResponse = await fetch('/smoker_options', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const smokerOptions = await smokerResponse.json();
+                populateDropdown('smoker', smokerOptions);
+                
+                // Fetch region options
+                const regionResponse = await fetch('/region_options', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const regionOptions = await regionResponse.json();
+                populateDropdown('region', regionOptions);
+                
+            } catch (error) {
+                console.error('Error fetching dropdown options:', error);
+            }
+        }
+        
+        // Populate dropdown with options
+        function populateDropdown(elementId, options) {
+            const dropdown = document.getElementById(elementId);
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                dropdown.appendChild(optionElement);
+            });
+        }
+        
+        // Handle form submission
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch('/prediction', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: new URLSearchParams(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.result) {
+                    const resultContainer = document.getElementById('resultContainer');
+                    const resultValue = document.getElementById('resultValue');
+                    
+                    resultValue.textContent = result.result.split(': ')[1];
+                    resultContainer.style.display = 'block';
+                    
+                    // Scroll to result
+                    resultContainer.scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (error) {
+                console.error('Error making prediction:', error);
+                alert('An error occurred while making the prediction. Please try again.');
+            }
+        });
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>
